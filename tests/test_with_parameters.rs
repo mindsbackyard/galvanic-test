@@ -14,6 +14,20 @@ mod fixture_without_parameters {
     });
 }
 
+mod fixture_with_single_parameter {
+    use galvanic_test::TestFixture;
+
+    fixture!( fixture_with_single_param(x: i32) -> i32 {
+        setup(&self) {
+            self.x * 2
+        }
+    });
+
+    test!( inject_fixture | fixture_with_single_param(21) | {
+        assert_eq!(fixture_with_single_param.val, 42);
+    });
+}
+
 mod fixture_with_parameters {
     use galvanic_test::TestFixture;
 
