@@ -68,6 +68,17 @@ macro_rules! fixture {
         }
     };
 
+    ( @new_method $param:ident : $param_ty:ty ) => {
+        fn new($param : $param_ty) -> Self {
+            Self { $param, }
+        }
+    };
+    ( @new_method $($param:ident : $param_ty:ty),+ ) => {
+        fn new(($($param),*) : ($($param_ty),*)) -> Self {
+            Self { $($param),* }
+        }
+    };
+
     ( $name:ident ( ) -> $ret_ty:ty {
           setup(&$self_setup:ident) $setup_body:block
           $(tear_down(&$self_td:ident) $tear_down_body:block)*
@@ -105,12 +116,10 @@ macro_rules! fixture {
     ) => {
         fixture!(@impl_struct $name $($param : $param_ty),*);
 
-        impl ::galvanic_test::TestFixture<($($param_ty,)*), $ret_ty> for $name {
-            fn new(($($param,)*) : ($($param_ty,)*)) -> Self {
-                Self { $($param),* }
-            }
-            fn parameters() -> Option<Box<Iterator<Item=($($param_ty,)*)>>> {
-                (None as Option<Box<Iterator<Item=($($param_ty,)*)>>>)
+        impl ::galvanic_test::TestFixture<($($param_ty),*), $ret_ty> for $name {
+            fixture!(@new_method $($param : $param_ty),*);
+            fn parameters() -> Option<Box<Iterator<Item=($($param_ty),*)>>> {
+                (None as Option<Box<Iterator<Item=($($param_ty),*)>>>)
                 $(; Some(Box::new($params_body)))*
             }
             fn setup(&$self_setup) -> ::galvanic_test::FixtureBinding<Self, $ret_ty> {
@@ -147,7 +156,7 @@ macro_rules! test {
     };
 
     ( @parameters $fixture:ident ( $($expr:expr),* ) $($remainder:tt)+ ) => {
-        let fixture_obj = $fixture::new(($($expr,)*));
+        let fixture_obj = $fixture::new(($($expr),*));
         let $fixture = fixture_obj.setup();
         test!(@parameters $($remainder)* fixture_obj);
     };
