@@ -141,8 +141,8 @@ macro_rules! fixture {
 macro_rules! test {
     ( @parameters | $body:block $test_case_failed:ident ) => { $body };
 
-    ( @parameters | $body:block $test_case_failed:ident $($fixture:ident)+) => {
-        let described_parameters = format!("{:?}", ($($fixture),*));
+    ( @parameters | $body:block $test_case_failed:ident $($fixture_obj:ident)+) => {
+        let described_parameters = format!("{:?}", ($(&$fixture_obj),*));
         let result = ::std::panic::catch_unwind(|| $body);
         if result.is_err() {
             println!("The above error occured with the following parameterisation of the test case: {}\n",

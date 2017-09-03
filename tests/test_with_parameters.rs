@@ -41,3 +41,24 @@ mod fixture_with_parameters {
         assert_eq!(fixture_with_params.val, 42);
     });
 }
+
+mod multiple_fixtures_without_parameters {
+    use galvanic_test::TestFixture;
+
+    fixture!( test_fixture1() -> i32 {
+        setup(&self) {
+            42
+        }
+    });
+
+    fixture!( test_fixture2() -> i32 {
+        setup(&self) {
+            23
+        }
+    });
+
+    test!( inject_fixture | test_fixture1, test_fixture2 | {
+        assert_eq!(test_fixture1.val, 42);
+        assert_eq!(test_fixture2.val, 23);
+    });
+}
