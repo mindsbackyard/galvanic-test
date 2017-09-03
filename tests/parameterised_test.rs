@@ -50,3 +50,49 @@ mod test_setup_teardown_for_each_parameterisation_of_a_single_fixture {
         }
     });
 }
+
+mod test_setup_teardown_for_each_parameterisation_of_multiple_fixtures {
+    use galvanic_test::TestFixture;
+
+    static mut SETUP_COUNT_1: usize = 0;
+    static mut TEAR_DOWN_COUNT_1: usize = 0;
+
+    fixture!( counting_fixture_1(it: usize) -> () {
+        params {
+            vec![1, 2, 3].into_iter()
+        }
+        setup(&self) {
+            unsafe { SETUP_COUNT_1 += 1; }
+        }
+        tear_down(&self) {
+            unsafe { TEAR_DOWN_COUNT_1 += 1; }
+        }
+    });
+
+    static mut SETUP_COUNT_2: usize = 0;
+    static mut TEAR_DOWN_COUNT_2: usize = 0;
+
+    fixture!( counting_fixture_2(it: usize) -> () {
+        params {
+            vec![1, 2, 3].into_iter()
+        }
+        setup(&self) {
+            unsafe { SETUP_COUNT_2 += 1; }
+        }
+        tear_down(&self) {
+            unsafe { TEAR_DOWN_COUNT_2 += 1; }
+        }
+    });
+
+    test!( inject_parameterised_fixtures | counting_fixture_1, counting_fixture_2 | {
+        let params1 = &counting_fixture_1.params;
+        let params2 = &counting_fixture_2.params;
+        unsafe {
+            assert_eq!(SETUP_COUNT_1, (params1.it - 1)*3 + params2.it);
+            assert_eq!(TEAR_DOWN_COUNT_1, (params1.it - 1)*3 + params2.it - 1);
+
+            assert_eq!(SETUP_COUNT_2, (params1.it - 1)*3 + params2.it);
+            assert_eq!(TEAR_DOWN_COUNT_2, (params1.it - 1)*3 + params2.it - 1);
+        }
+    });
+}
