@@ -1,7 +1,9 @@
-#![cfg_attr(feature = "galvanic_mock_integration", feature(proc_macro))]
+#![cfg(feature = "galvanic_mock_integration")]
+
+#![feature(proc_macro)]
 #[macro_use] extern crate galvanic_test;
-#[cfg(feature = "galvanic_mock_integration")] extern crate galvanic_mock;
-#[cfg(feature = "galvanic_mock_integration")] use galvanic_mock::*;
+extern crate galvanic_mock;
+use galvanic_mock::*;
 
 test_suite! {
     name named_test_suite1;

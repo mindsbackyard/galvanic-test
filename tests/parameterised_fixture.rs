@@ -13,13 +13,16 @@ fixture!( test_fixture(x: i32, y: i32) -> i32 {
 
 #[test]
 fn should_generate_multiple_fixtures() {
-    let cases = test_fixture::parameterise()
+    let cases = test_fixture::parameters()
                              .expect("A case iterator should be returned")
-                             .map(|f| {
-                                let b = f.setup();
-                                (b.val, b.params.y - b.params.x)
+                             .map(|p| {
+                                 let f = test_fixture::new(&p);
+                                 let b = f.setup();
+                                 (b.val, b.params.y - b.params.x)
                              })
                              .collect::<Vec<_>>();
+
+
 
     assert_eq!(cases.len(), 3);
 

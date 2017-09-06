@@ -6,8 +6,5 @@ authors = ["Christopher Bacher <mindsbackyard@gmail.com>"]
 [dependencies]
 galvanic-mock = { version = "0.1", optional = true }
 
-[dev-dependencies]
-galvanic-mock = "0.1"
-
 [features]
 galvanic_mock_integration = ["galvanic-mock"]

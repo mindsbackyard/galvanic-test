@@ -18,7 +18,8 @@ fixture!( test_fixture(x: i32, y: i32) -> i32 {
 #[test]
 fn should_create_binding_access_parameters_and_tear_down() {
     {
-        let fixture = test_fixture::new((2, 3));
+        let params = &(2, 3);
+        let fixture = test_fixture::new(params);
         let binding = fixture.setup();
         assert_eq!(binding.val,
                    binding.params.x * binding.params.y);

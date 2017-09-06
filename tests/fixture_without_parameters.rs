@@ -11,21 +11,16 @@ mod setup_only {
 
     #[test]
     fn should_create_i32() {
-        let fixture = setup_only::new(());
+        let params = &();
+        let fixture = setup_only::new(params);
         assert_eq!(fixture.setup().val, 42);
     }
 
     #[test]
-    #[should_panic]
-    fn should_fail_to_get_parameters() {
-        setup_only::parameters();
-    }
-
-    #[test]
-    fn should_have_a_single_parameterisation() {
-        let mut iter = setup_only::parameterise().expect("No fixtures generated");
-        assert_eq!(iter.next().expect("No parameterised fixture returned").setup().val, 42);
-        assert!(iter.next().is_none());
+    fn should_get_single_unit_parameter() {
+        assert_eq!(setup_only::parameters().unwrap().collect::<Vec<_>>(),
+                   vec![()]
+        );
     }
 }
 
@@ -47,7 +42,8 @@ mod with_tear_down {
     #[test]
     fn should_tear_down_fixture() {
         {
-            setup_only::new(());
+            let params = &();
+            setup_only::new(params);
         }
         assert!(unsafe { TEAR_DOWN_FLAG });
     }

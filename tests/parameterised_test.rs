@@ -1,7 +1,5 @@
 #[macro_use] extern crate galvanic_test;
 
-#[cfg(feature = "galvanic_mock_integration")] extern crate galvanic_mock;
-
 mod basic {
     use galvanic_test::TestFixture;
 
@@ -45,7 +43,7 @@ mod test_setup_teardown_for_each_parameterisation_of_a_single_fixture {
     test!( inject_parameterised_fixtures | counting_fixture | {
         let params = counting_fixture.into_params();
         unsafe {
-            assert_eq!(SETUP_COUNT, params.it);
+            assert_eq!(SETUP_COUNT, *params.it);
             assert_eq!(TEAR_DOWN_COUNT, params.it-1);
         }
     });

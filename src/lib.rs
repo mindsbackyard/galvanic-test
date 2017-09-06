@@ -6,20 +6,11 @@ pub fn testfunc() {
     println!("feature present");
 }
 
-pub trait TestFixture<P, R> : Drop
+pub trait TestFixture<'param, P, R> : Drop
         where P: Debug + 'static {
-    fn new(curried_params: P) -> Self;
+    fn new(curried_params: &'param P) -> Self;
 
-    fn parameters() -> Option<Box<Iterator<Item=P>>> { None }
-
-    fn parameterise() -> Option<Box<Iterator<Item=Self>>>
-            where Self: std::marker::Sized {
-        if let Some(iter) = Self::parameters() {
-            Some(Box::new(iter.map(|params| Self::new(params))))
-        } else {
-            None
-        }
-    }
+    fn parameters() -> Option<Box<Iterator<Item=P>>>;
 
     fn setup(&self) -> FixtureBinding<Self, R>
             where Self: std::marker::Sized;
@@ -52,7 +43,7 @@ impl<'fixture, F:'fixture, R> FixtureBinding<'fixture, F, R> {
 #[macro_export]
 macro_rules! fixture {
     ( @impl_drop $name:ident ) => {
-        impl ::std::ops::Drop for $name {
+        impl<'param> ::std::ops::Drop for $name<'param> {
             fn drop(&mut self) {
                 use ::galvanic_test::TestFixture;
                 self.tear_down();
@@ -63,18 +54,18 @@ macro_rules! fixture {
     ( @impl_struct $name:ident $($param:ident : $param_ty:ty),* ) => {
         #[allow(non_camel_case_types)]
         #[derive(Debug)]
-        pub struct $name {
-            $(pub $param : $param_ty),*
+        pub struct $name<'param> {
+            $(pub $param : &'param $param_ty),*
         }
     };
 
     ( @new_method $param:ident : $param_ty:ty ) => {
-        fn new($param : $param_ty) -> Self {
+        fn new($param : &'param $param_ty) -> Self {
             Self { $param, }
         }
     };
     ( @new_method $($param:ident : $param_ty:ty),+ ) => {
-        fn new(($($param),*) : ($($param_ty),*)) -> Self {
+        fn new(&($(ref $param),*) : &'param ($($param_ty),*)) -> Self {
             Self { $($param),* }
         }
     };
@@ -84,16 +75,12 @@ macro_rules! fixture {
           $(tear_down(&$self_td:ident) $tear_down_body:block)*
       }
     ) => {
-        fixture!(@impl_struct $name );
+        fixture!(@impl_struct $name _phantom : ());
 
-        impl ::galvanic_test::TestFixture<(), $ret_ty> for $name {
-            fn new(_: ()) -> Self { Self {} }
+        impl<'param> ::galvanic_test::TestFixture<'param, (), $ret_ty> for $name<'param> {
+            fn new(_phantom: &'param ()) -> Self { Self { _phantom } }
             fn parameters() -> Option<Box<Iterator<Item=()>>> {
-                panic!("Internal error: `parameters()` should never be called on a fixture without parameters")
-            }
-            fn parameterise() -> Option<Box<Iterator<Item=Self>>>
-                    where Self: ::std::marker::Sized {
-                Some(Box::new(Some(Self::new(())).into_iter()))
+                Some(Box::new(Some(()).into_iter()))
             }
             fn setup(&$self_setup) -> ::galvanic_test::FixtureBinding<Self, $ret_ty> {
                 let value = $setup_body;
@@ -116,7 +103,7 @@ macro_rules! fixture {
     ) => {
         fixture!(@impl_struct $name $($param : $param_ty),*);
 
-        impl ::galvanic_test::TestFixture<($($param_ty),*), $ret_ty> for $name {
+        impl<'param> ::galvanic_test::TestFixture<'param, ($($param_ty),*), $ret_ty> for $name<'param> {
             fixture!(@new_method $($param : $param_ty),*);
             fn parameters() -> Option<Box<Iterator<Item=($($param_ty),*)>>> {
                 (None as Option<Box<Iterator<Item=($($param_ty),*)>>>)
@@ -141,11 +128,19 @@ macro_rules! fixture {
 macro_rules! test {
     ( @parameters | $body:block $test_case_failed:ident ) => { $body };
 
-    ( @parameters | $body:block $test_case_failed:ident $($fixture_obj:ident)+) => {
-        let described_parameters = format!("{:?}", ($(&$fixture_obj),*));
-        let result = ::std::panic::catch_unwind(|| $body);
+    ( @parameters | $body:block $test_case_failed:ident $(($fixture_obj:ident, $params:expr, $fixture:ident))+) => {
+        let mut described_parameters = String::from("Test panicked before all fixtures have been assigned.");
+        let result = ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(|| {
+            $(
+                let params = &$params;
+                let $fixture_obj = $fixture::new(params);
+                let $fixture = $fixture_obj.setup();
+            )*
+            described_parameters = format!("{:?}", ($(&$fixture_obj),*));
+            $body
+        }));
         if result.is_err() {
-            println!("The above error occured with the following parameterisation of the test case: {}\n",
+            println!("The above error occured with the following parameterisation of the test case:\n    {}\n",
                      described_parameters);
             $test_case_failed.set(true);
         }
@@ -156,17 +151,17 @@ macro_rules! test {
     };
 
     ( @parameters $fixture:ident ( $($expr:expr),* ) $($remainder:tt)+ ) => {
-        let fixture_obj = $fixture::new(($($expr),*));
-        let $fixture = fixture_obj.setup();
-        test!(@parameters $($remainder)* fixture_obj);
+        // let fixture_obj = $fixture::new(&($($expr),*));
+        // let $fixture = fixture_obj.setup();
+        test!(@parameters $($remainder)* (fixture_obj, ($($expr),*), $fixture));
     };
 
     ( @parameters $fixture:ident $($remainder:tt)+ ) => {
-        match $fixture::parameterise() {
+        match $fixture::parameters() {
             Some(iterator) => {
-                for fixture_obj in iterator {
-                    let $fixture = fixture_obj.setup();
-                    test!(@parameters $($remainder)* fixture_obj);
+                for params in iterator {
+                    // let $fixture = fixture_obj.setup();
+                    test!(@parameters $($remainder)* (fixture_obj, params, $fixture));
                 }
             },
             None => panic!(concat!(
