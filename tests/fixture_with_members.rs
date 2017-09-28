@@ -33,13 +33,15 @@ fixture!( with_members(x: i32, y: i32) -> () {
 
 #[test]
 fn should_create_fixture_with_members_and_assign_expected_values() {
-    let mut fixture = with_members::new(&(40, 1));
+    let params = (40, 1);
+    let mut fixture = with_members::new(&params);
     fixture.setup();
 }
 
 #[test]
 #[should_panic]
 fn should_create_fixture_with_members_and_assign_wrong_values() {
-    let mut fixture = with_members::new(&(40, 2));
+    let params = (40, 2);
+    let mut fixture = with_members::new(&params);
     fixture.setup();
 }
