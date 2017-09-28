@@ -15,7 +15,7 @@ readme = "Readme.md"
 
 license = "Apache-2.0"
 
-keywords = ["test", "unit testing", "fixtures", "parameterised test cases"]
+keywords = ["test", "unit-testing", "fixtures", "parameterised-test-cases"]
 categories = ["development-tools::testing"]
 
 [dependencies]
