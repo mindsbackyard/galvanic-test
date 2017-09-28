@@ -3,8 +3,26 @@ name = "galvanic-test"
 version = "0.1.0"
 authors = ["Christopher Bacher <mindsbackyard@gmail.com>"]
 
+description = """A testing framework for setting up and tearing up test fixtures/environments with support for parameterised test cases.
+
+This crate is part of galvanic---a complete test framework for Rust."""
+
+homepage = "https://github.com/mindsbackyard/galvanic-test"
+repository = "https://github.com/mindsbackyard/galvanic-test"
+documentation = "https://github.com/mindsbackyard/galvanic-test"
+
+readme = "Readme.md"
+
+license = "Apache-2.0"
+
+keywords = ["test", "unit testing", "fixtures", "parameterised test cases"]
+categories = ["development-tools::testing"]
+
 [dependencies]
 galvanic-mock = { version = "0.1", optional = true }
 
 [features]
 galvanic_mock_integration = ["galvanic-mock"]
+
+[badges]
+travis-ci = { repository = "mindsbackyard/galvanic-test" }
