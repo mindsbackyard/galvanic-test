@@ -16,33 +16,30 @@
 #[macro_use] extern crate galvanic_test;
 use galvanic_test::TestFixture;
 
-static mut TEAR_DOWN_VALUE: i32 = 0;
-
-fixture!( test_fixture(x: i32, y: i32) -> i32 {
-    setup(&mut self) {
-        self.x * self.y
+fixture!( with_members(x: i32, y: i32) -> () {
+    members {
+        data_int: Option<i32>,
+        data_float: Option<f32>
     }
-
+    setup(&mut self) {
+        self.data_int = Some(self.x + self.y);
+        self.data_float = Some((self.x + self.y) as f32 * 2.0);
+    }
     tear_down(&self) {
-        unsafe {
-            TEAR_DOWN_VALUE = self.y - self.x;
-        }
+        assert_eq!(self.data_int, Some(41));
+        assert_eq!(self.data_float, Some(82.0));
     }
 });
 
 #[test]
-fn should_create_binding_access_parameters_and_tear_down() {
-    {
-        let params = &(2, 3);
-        let mut fixture = test_fixture::new(params);
-        let binding = fixture.setup();
-        assert_eq!(binding.val,
-                   binding.params.x * binding.params.y);
-    }
-    assert_eq!(unsafe { TEAR_DOWN_VALUE }, 1);
+fn should_create_fixture_with_members_and_assign_expected_values() {
+    let mut fixture = with_members::new(&(40, 1));
+    fixture.setup();
 }
 
 #[test]
-fn should_have_no_parameters() {
-    assert!(test_fixture::parameters().is_none());
+#[should_panic]
+fn should_create_fixture_with_members_and_assign_wrong_values() {
+    let mut fixture = with_members::new(&(40, 2));
+    fixture.setup();
 }

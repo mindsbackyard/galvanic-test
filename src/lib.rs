@@ -1,10 +1,20 @@
+/* Copyright 2017 Christopher Bacher
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 use std::ops::Drop;
 use std::fmt::Debug;
-
-#[cfg(feature = "galvanic_mock_integration")]
-pub fn testfunc() {
-    println!("feature present");
-}
 
 pub trait TestFixture<'param, P, R> : Drop
         where P: Debug + 'static {
@@ -12,7 +22,7 @@ pub trait TestFixture<'param, P, R> : Drop
 
     fn parameters() -> Option<Box<Iterator<Item=P>>>;
 
-    fn setup(&self) -> FixtureBinding<Self, R>
+    fn setup(&mut self) -> FixtureBinding<Self, R>
             where Self: std::marker::Sized;
 
     fn tear_down(&self) { }
@@ -51,38 +61,51 @@ macro_rules! fixture {
         }
     };
 
-    ( @impl_struct $name:ident $($param:ident : $param_ty:ty),* ) => {
+    ( @impl_struct $name:ident Params[$($param:ident : $param_ty:ty),*] Members[$($member:ident : $member_ty:ty),*] ) => {
         #[allow(non_camel_case_types)]
         #[derive(Debug)]
         pub struct $name<'param> {
-            $(pub $param : &'param $param_ty),*
+            $(pub $param : &'param $param_ty,)*
+            $($member : Option<$member_ty>,)*
         }
     };
 
-    ( @new_method $param:ident : $param_ty:ty ) => {
+    ( @new_method Params[$param:ident : $param_ty:ty] Members[$($member:ident),*] ) => {
         fn new($param : &'param $param_ty) -> Self {
-            Self { $param, }
+            Self {
+                $param,
+                $($member: None,)*
+            }
         }
     };
-    ( @new_method $($param:ident : $param_ty:ty),+ ) => {
+    ( @new_method Params[$($param:ident : $param_ty:ty),+] Members[$($member:ident),*] ) => {
         fn new(&($(ref $param),*) : &'param ($($param_ty),*)) -> Self {
-            Self { $($param),* }
+            Self {
+                $($param,)*
+                $($member: None,)*
+            }
         }
     };
 
     ( $name:ident ( ) -> $ret_ty:ty {
-          setup(&$self_setup:ident) $setup_body:block
+          $(members { $($member:ident : Option<$member_ty:ty>),* })*
+          setup(& mut $self_setup:ident) $setup_body:block
           $(tear_down(&$self_td:ident) $tear_down_body:block)*
       }
     ) => {
-        fixture!(@impl_struct $name _phantom : ());
+        fixture!(@impl_struct $name Params[_phantom : ()] Members[$($($member : $member_ty),*),*]);
 
         impl<'param> ::galvanic_test::TestFixture<'param, (), $ret_ty> for $name<'param> {
-            fn new(_phantom: &'param ()) -> Self { Self { _phantom } }
+            fn new(_phantom: &'param ()) -> Self {
+                Self {
+                    _phantom,
+                    $($($member: None),*),*
+                }
+            }
             fn parameters() -> Option<Box<Iterator<Item=()>>> {
                 Some(Box::new(Some(()).into_iter()))
             }
-            fn setup(&$self_setup) -> ::galvanic_test::FixtureBinding<Self, $ret_ty> {
+            fn setup(&mut $self_setup) -> ::galvanic_test::FixtureBinding<Self, $ret_ty> {
                 let value = $setup_body;
                 ::galvanic_test::FixtureBinding {
                     val: value,
@@ -96,20 +119,21 @@ macro_rules! fixture {
     };
 
     ( $name:ident ($($param:ident : $param_ty:ty),+) -> $ret_ty:ty {
+          $(members { $($member:ident : Option<$member_ty:ty>),* })*
           $(params $params_body:block)*
-          setup(&$self_setup:ident) $setup_body:block
+          setup(& mut $self_setup:ident) $setup_body:block
           $(tear_down(&$self_td:ident) $tear_down_body:block)*
       }
     ) => {
-        fixture!(@impl_struct $name $($param : $param_ty),*);
+        fixture!(@impl_struct $name Params[$($param : $param_ty),*] Members[$($($member : $member_ty),*),*]);
 
         impl<'param> ::galvanic_test::TestFixture<'param, ($($param_ty),*), $ret_ty> for $name<'param> {
-            fixture!(@new_method $($param : $param_ty),*);
+            fixture!(@new_method Params[$($param : $param_ty),*] Members[$($($member),*),*]);
             fn parameters() -> Option<Box<Iterator<Item=($($param_ty),*)>>> {
                 (None as Option<Box<Iterator<Item=($($param_ty),*)>>>)
                 $(; Some(Box::new($params_body)))*
             }
-            fn setup(&$self_setup) -> ::galvanic_test::FixtureBinding<Self, $ret_ty> {
+            fn setup(&mut $self_setup) -> ::galvanic_test::FixtureBinding<Self, $ret_ty> {
                 let value = $setup_body;
                 ::galvanic_test::FixtureBinding {
                     val: value,
@@ -131,12 +155,14 @@ macro_rules! test {
     ( @parameters | $body:block $test_case_failed:ident $(($fixture_obj:ident, $params:expr, $fixture:ident))+) => {
         let mut described_parameters = String::from("Test panicked before all fixtures have been assigned.");
         let result = ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(|| {
+            let mut described_params = Vec::new();
             $(
                 let params = &$params;
-                let $fixture_obj = $fixture::new(params);
+                let mut $fixture_obj = $fixture::new(params);
+                described_params.push(format!("{:?}", $fixture_obj));
                 let $fixture = $fixture_obj.setup();
             )*
-            described_parameters = format!("{:?}", ($(&$fixture_obj),*));
+            described_parameters = described_params.join(", ");
             $body
         }));
         if result.is_err() {
@@ -151,8 +177,6 @@ macro_rules! test {
     };
 
     ( @parameters $fixture:ident ( $($expr:expr),* ) $($remainder:tt)+ ) => {
-        // let fixture_obj = $fixture::new(&($($expr),*));
-        // let $fixture = fixture_obj.setup();
         test!(@parameters $($remainder)* (fixture_obj, ($($expr),*), $fixture));
     };
 
@@ -160,7 +184,6 @@ macro_rules! test {
         match $fixture::parameters() {
             Some(iterator) => {
                 for params in iterator {
-                    // let $fixture = fixture_obj.setup();
                     test!(@parameters $($remainder)* (fixture_obj, params, $fixture));
                 }
             },
@@ -201,6 +224,7 @@ macro_rules! test_suite {
     ( name $name:ident ; $($remainder:tt)* ) => {
         #[cfg(test)]
         mod $name {
+            use ::galvanic_test::TestFixture;
             __test_suite_int!(@int $($remainder)*);
         }
     };
@@ -209,6 +233,7 @@ macro_rules! test_suite {
     ( $($remainder:tt)* ) => {
         #[cfg(test)]
         mod __test {
+            use ::galvanic_test::TestFixture;
             __test_suite_int!(@int $($remainder)*);
         }
     };
@@ -219,18 +244,22 @@ macro_rules! test_suite {
 macro_rules! test_suite {
     // named test suite
     ( name $name:ident ; $($remainder:tt)* ) => {
+        #[allow(unused_imports)] use ::galvanic_mock::use_mocks;
         #[cfg(test)]
         #[use_mocks]
         mod $name {
+            use ::galvanic_test::TestFixture;
             __test_suite_int!(@int $($remainder)*);
         }
     };
 
     // anonymous test suite
     ( $($remainder:tt)* ) => {
+        #[allow(unused_imports)] use ::galvanic_mock::use_mocks;
         #[cfg(test)]
         #[use_mocks]
         mod __test {
+            use ::galvanic_test::TestFixture;
             __test_suite_int!(@int $($remainder)*);
         }
     };
@@ -240,12 +269,16 @@ macro_rules! test_suite {
 macro_rules! __test_suite_int {
     // internal: fixture in test_suite
     ( @int $(#[$attr:meta])* fixture $name:ident ($($param:ident : $param_ty:ty),*) -> $ret_ty:ty {
-          $(setup(&$self_setup:ident) $setup_body:block)*
+          $(members { $($member:ident : Option<$member_ty:ty>),* })*
+          $(params $params_body:block)*
+          setup(& mut $self_setup:ident) $setup_body:block
           $(tear_down(&$self_td:ident) $tear_down_body:block)*
       } $($remainder:tt)*
     ) => {
         fixture!( $(#[$attr])* $name ($($param : $param_ty),*) -> $ret_ty {
-              $(setup(&$self_setup) $setup_body)*
+              $(members { $($member : Option<$member_ty>),* })*
+              $(params $params_body)*
+              setup(& mut $self_setup) $setup_body
               $(tear_down(&$self_td) $tear_down_body)*
         });
         __test_suite_int!(@int $($remainder)*);
