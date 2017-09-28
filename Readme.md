@@ -58,17 +58,17 @@ use std::io::prelude::*;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 test_suite! {
-    fixture bogus_number() {
-        setup(&self) -> i32 {
+    fixture bogus_number() -> i32 {
+        setup(&self) {
             42
         }
     }
 
-    fixture input_file(file_name: String, content: String) {
+    fixture input_file(file_name: String, content: String) -> File {
         members {
             file_name: Option<String>
         }
-        setup(&mut self) -> File {
+        setup(&mut self) {
             let file_name = format!("/tmp/{}.txt", file_name);
             self.file_name = Some(file_name.clone());
             {
