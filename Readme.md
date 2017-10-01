@@ -97,6 +97,27 @@ test_suite! {
 }
 ```
 
+Test fixtures enable us also to run the same test code with different parameterisations.
+This can significantly reduce our work required for testing complex code with multiple execution paths.
+```Rust
+test_suite! {
+    fixture product(x: u32, y: u32) -> u32 {
+        params {
+            vec![(2,3), (2,4), (1,6), (1,5), (0,100)].into_iter()
+        }
+        setup(&mut self) {
+            self.x * self.y
+        }
+    }
+
+    test a_parameterised_test_case(product) {
+        let wrong_product = (0 .. *product.params.y).fold(0, |p,_| p + product.params.x) - product.params.y%2;
+        // fails for (2,3) & (1,5)
+        assert_eq!(wrong_product, product.val)
+    }
+}
+```
+
 ## Documentation
 
 **Galvanic-test** simplifies the setup of shared test environments, i.e., it helps us to create and reset the resources needed by our tests work properly.
