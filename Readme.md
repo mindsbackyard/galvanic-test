@@ -52,34 +52,33 @@ If you know [pytest](https://docs.pytest.org/en/latest/) you should feal at home
 If you have experience with XUnit-style frameworks, e.g., JUnit, CPPUnit, ...; then you can think about fixtures as different `before`/`after` blocks which belong together.
 ```Rust
 #[macro_use] extern crate galvanic_test;
-use galvanic_test::*;
-use std::fs::{File, remove_file};
-use std::io::prelude::*;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 test_suite! {
+    use std::fs::{File, remove_file};
+    use std::io::prelude::*;
+
     fixture bogus_number() -> i32 {
-        setup(&self) {
+        setup(&mut self) {
             42
         }
     }
 
     fixture input_file(file_name: String, content: String) -> File {
         members {
-            file_name: Option<String>
+            file_path: Option<String>
         }
         setup(&mut self) {
-            let file_name = format!("/tmp/{}.txt", file_name);
-            self.file_name = Some(file_name.clone());
+            let file_path = format!("/tmp/{}.txt", self.file_name);
+            self.file_path = Some(file_path.clone());
             {
-                let mut file = File::create(&file_name).expect("Could not create file.");
-                file.write_all(content).expect("Could not write input.");
+                let mut file = File::create(&file_path).expect("Could not create file.");
+                file.write_all(self.content.as_bytes()).expect("Could not write input.");
             }
-            File::open(&file_name).expect("Could not open file.")
+            File::open(&file_path).expect("Could not open file.")
         }
         // tear_down is optional
         tear_down(&self) {
-            remove_file(self.file_name.as_ref().unwrap()).expect("Could not delete file.")
+            remove_file(self.file_path.as_ref().unwrap()).expect("Could not delete file.")
         }
     }
 
@@ -89,9 +88,11 @@ test_suite! {
     }
 
     // fixtures with arguments must receive the required values
-    test another_test_using_fixtures(bogus_number, input_file("my_file", "The stored number is: 42")) {
-        assert_eq!(read_content, input_file.params.content);
-        assert_eq!(read_number, bogus_number);
+    test another_test_using_fixtures(input_file(String::from("my_file"), String::from("The stored number is: 42"))) {
+        let mut read_content = String::new();
+        input_file.val.read_to_string(&mut read_content).expect("Couldn't read 'my_file'");
+
+        assert_eq!(&read_content, input_file.params.content);
     }
 }
 ```
@@ -192,8 +193,6 @@ Every fixture definition consists of the following parts:
 * the *type* of the *resource* managed by the fixture: `i32` here
 * a required `setup` block which receives the fixture (`self`) as a mutable borrow and must return a resource of the type specified by the fixture
 * an *optional* `tear_down` block which receives the fixture (`self`) as an immutable borrow
-
-Mind that the order of the `setup` and `tear_down` blocks are fixed.
 
 To use our new fixture in a test it must be defined in the same `test_suite!`.
 The fixtures required by a test are given as parameters for test case by name.

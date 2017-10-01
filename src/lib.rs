@@ -160,7 +160,7 @@ macro_rules! test {
                 let params = &$params;
                 let mut $fixture_obj = $fixture::new(params);
                 described_params.push(format!("{:?}", $fixture_obj));
-                let $fixture = $fixture_obj.setup();
+                let mut $fixture = $fixture_obj.setup();
             )*
             described_parameters = described_params.join(", ");
             $body
