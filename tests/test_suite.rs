@@ -26,6 +26,14 @@ test_suite! {
 }
 
 test_suite! {
+    name named_test_suite0;
+
+    test simple_test() {
+        assert!(true);
+    }
+}
+
+test_suite! {
     name named_test_suite1;
     use galvanic_test::TestFixture;
 
