@@ -161,6 +161,7 @@ macro_rules! test {
                 let mut $fixture_obj = $fixture::new(params);
                 described_params.push(format!("{:?}", $fixture_obj));
                 let mut $fixture = $fixture_obj.setup();
+                noop(&mut $fixture);
             )*
             described_parameters = described_params.join(", ");
             $body
@@ -199,6 +200,7 @@ macro_rules! test {
         #[test]
         $(#[$attr])*
         fn $name() {
+            fn noop<F, R>(_: &::galvanic_test::FixtureBinding<F,R>) { }
             // Cell is a workaround for #![allow(unused_mut)] which would affect the whole fn
             let test_case_failed = ::std::cell::Cell::new(false);
             test!(@parameters $($args_and_body)* test_case_failed);
@@ -245,7 +247,7 @@ macro_rules! test_suite {
     // named test suite
     ( name $name:ident ; $($remainder:tt)* ) => {
         #[allow(unused_imports)] use ::galvanic_mock::use_mocks;
-        
+
         #[cfg(test)]
         #[use_mocks]
         mod $name {
