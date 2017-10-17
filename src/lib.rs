@@ -232,7 +232,7 @@ macro_rules! test_suite {
     // anonymous test suite
     ( $($remainder:tt)* ) => {
         #[cfg(test)]
-        mod __test {
+        mod __galvanic_test {
             #[allow(unused_imports)] use ::galvanic_test::TestFixture;
             __test_suite_int!(@int $($remainder)*);
         }
@@ -245,6 +245,7 @@ macro_rules! test_suite {
     // named test suite
     ( name $name:ident ; $($remainder:tt)* ) => {
         #[allow(unused_imports)] use ::galvanic_mock::use_mocks;
+        
         #[cfg(test)]
         #[use_mocks]
         mod $name {
@@ -258,7 +259,7 @@ macro_rules! test_suite {
         #[allow(unused_imports)] use ::galvanic_mock::use_mocks;
         #[cfg(test)]
         #[use_mocks]
-        mod __test {
+        mod __galvanic_test {
             #[allow(unused_imports)] use ::galvanic_test::TestFixture;
             __test_suite_int!(@int $($remainder)*);
         }

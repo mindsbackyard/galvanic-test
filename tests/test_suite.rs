@@ -20,6 +20,12 @@
 extern crate galvanic_mock;
 
 test_suite! {
+    test simple_test_in_unnamed_test_suite() {
+        assert!(true);
+    }
+}
+
+test_suite! {
     name named_test_suite1;
     use galvanic_test::TestFixture;
 
