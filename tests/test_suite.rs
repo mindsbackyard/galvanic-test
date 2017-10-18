@@ -13,11 +13,10 @@
  * limitations under the License.
  */
 
-#![cfg(feature = "galvanic_mock_integration")]
+#![cfg_attr(feature = "galvanic_mock_integration", feature(proc_macro))]
 
-#![feature(proc_macro)]
 #[macro_use] extern crate galvanic_test;
-extern crate galvanic_mock;
+#[cfg(feature = "galvanic_mock_integration")] extern crate galvanic_mock;
 
 test_suite! {
     test simple_test_in_unnamed_test_suite() {
