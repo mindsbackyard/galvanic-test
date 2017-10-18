@@ -200,6 +200,7 @@ macro_rules! test {
         #[test]
         $(#[$attr])*
         fn $name() {
+            #[allow(dead_code)]
             fn noop<F, R>(_: &::galvanic_test::FixtureBinding<F,R>) { }
             // Cell is a workaround for #![allow(unused_mut)] which would affect the whole fn
             let test_case_failed = ::std::cell::Cell::new(false);
