@@ -2,4 +2,10 @@ language: rust
 rust:
   - stable
   - beta
-  - nightly
+matrix:
+    include:
+        - rust: nightly
+          env: FEATURES=
+        - rust: nightly
+          env: FEATURES='--features galvanic_mock_integration'
+script: cargo test --verbose $FEATURES         

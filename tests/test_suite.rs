@@ -35,7 +35,6 @@ test_suite! {
 
 test_suite! {
     name named_test_suite1;
-    use galvanic_test::TestFixture;
 
     fixture test_fixture() -> i32 {
         setup(&mut self) {
@@ -50,7 +49,6 @@ test_suite! {
 
 test_suite! {
     name named_test_suite2;
-    use galvanic_test::TestFixture;
 
     fixture fixture_with_params(x: i32, y: i32) -> i32 {
         setup(&mut self) {
@@ -65,7 +63,6 @@ test_suite! {
 
 test_suite! {
     name parameterised_test_suite;
-    use galvanic_test::TestFixture;
 
     fixture fixture_with_params(x: i32, y: i32) -> i32 {
         params {

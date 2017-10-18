@@ -26,7 +26,6 @@ trait TestTrait {
 
 test_suite! {
     name inject_mock;
-    use galvanic_test::TestFixture;
     use super::*;
 
     fixture test_mock() -> mock::TestMock {

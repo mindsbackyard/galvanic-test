@@ -246,24 +246,29 @@ macro_rules! test_suite {
 macro_rules! test_suite {
     // named test suite
     ( name $name:ident ; $($remainder:tt)* ) => {
-        #[allow(unused_imports)] use ::galvanic_mock::use_mocks;
-
         #[cfg(test)]
-        #[use_mocks]
         mod $name {
-            #[allow(unused_imports)] use ::galvanic_test::TestFixture;
-            __test_suite_int!(@int $($remainder)*);
+            #[allow(unused_imports)] use ::galvanic_mock::use_mocks;
+            #[allow(unused_imports)] use super::*;
+            #[use_mocks]
+            mod with_mocks {
+                #[allow(unused_imports)] use ::galvanic_test::TestFixture;
+                __test_suite_int!(@int $($remainder)*);
+            }
         }
     };
 
     // anonymous test suite
     ( $($remainder:tt)* ) => {
-        #[allow(unused_imports)] use ::galvanic_mock::use_mocks;
         #[cfg(test)]
-        #[use_mocks]
         mod __galvanic_test {
-            #[allow(unused_imports)] use ::galvanic_test::TestFixture;
-            __test_suite_int!(@int $($remainder)*);
+            #[allow(unused_imports)] use ::galvanic_mock::use_mocks;
+            #[allow(unused_imports)] use super::*;
+            #[use_mocks]
+            mod with_mocks {
+                #[allow(unused_imports)] use ::galvanic_test::TestFixture;
+                __test_suite_int!(@int $($remainder)*);
+            }
         }
     };
 }
