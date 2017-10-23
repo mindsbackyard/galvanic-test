@@ -7,7 +7,7 @@ This crate provides a framework for creating test suites, managing their shared 
  * supports test fixtures to handle setup/tear-down of test dependencies
  * test fixtures with parameters provide more flexibility in test setups
  * parameterised tests---write your test once and verify it in different scenarios
- * automatic depency injection of test fixtures into your tests
+ * automatic dependency injection of test fixtures into your tests
  * richer test design with **[galvanic-assert](https://www.github.com/mindsbackyard/galvanic-assert)**---express more specific properties of parameterised tests
  * test suites integrate with **[galvanic-mock](https://www.github.com/mindsbackyard/galvanic-mock)**---no manual `#[use_mocks]` is needed
  * other panic-based assertion and mocking frameworks of your choice can be used too
@@ -25,7 +25,7 @@ Tests are organised in test suites which are either named or anonymous.
 #[macro_use] extern crate galvanic_test;
 use galvanic_test::*;
 
-// test suites are only built when a test is exucted, e.g., with `cargo test`
+// test suites are only built when a test is executed, e.g., with `cargo test`
 test_suite! {
     // for anonymous test suites remove the name directive
     name my_test_suite;
@@ -48,7 +48,7 @@ test_suite! {
 
 The most powerful part of **galvanic-test** are test fixtures to manage your test environments.
 A test fixture is a piece of code which setups *one* specific part of a test and makes sure that it's torn down after the test executed (even if it failed).
-If you know [pytest](https://docs.pytest.org/en/latest/) you should feal at home.
+If you know [pytest](https://docs.pytest.org/en/latest/) you should feel at home.
 If you have experience with XUnit-style frameworks, e.g., JUnit, CPPUnit, ...; then you can think about fixtures as different `before`/`after` blocks which belong together.
 ```Rust
 #[macro_use] extern crate galvanic_test;
@@ -289,7 +289,7 @@ test parameterised_test(product) {
 }
 ```
 
-We want to test this code snippet with differnt values to test the border cases and equivalence classes.
+We want to test this code snippet with different values to test the border cases and equivalence classes.
 For we create a `product` fixture with arguments `x` and `y` and let the `setup` block calculate the product of the two numbers.
 To make the fixture parameterised we add a `params` block at the beginning.
 The block must return an `Iterator<R>` where `R` is the type of the fixture's return value.
@@ -307,7 +307,7 @@ fixture product(x: u32, y: u32) -> u32 {
 Now if we run our tests each test case with takes the `product` fixture as an argument without supplying parameters to the fixture will take the values from the `params` block instead.
 The `setup` and `tear_down` block will be executed before/after each parameterisation.
 
-If the test case takes multple parameterised fixtures then all possible combinations (the cross-product) will be evaluated.
+If the test case takes multiple parameterised fixtures then all possible combinations (the cross-product) will be evaluated.
 Again before/after each parameterisation **all** `setup`/`tear_down` blocks of the parameterised fixtures will be executed.
 
 If on the other hand you provide parameters to a parameterised fixture, as shown below, then only that parameterisation will be considered for the fixture.
@@ -346,7 +346,7 @@ test test::parameterised_test ... FAILED
 
 Be careful when applying `#[should_panic]` to a parameterised test case.
 In that case the test will succeed if **any** parameterisation fails.
-To assert that all parameterisation fail it's recommendend to use `assert_that!(..., panics)` from the `galvanic-assert` crate to treat panicking like a regular behaviour.
+To assert that all parameterisation fail it's recommended to use `assert_that!(..., panics)` from the `galvanic-assert` crate to treat panicking like a regular behaviour.
 
 ### Enabling Galvanic-mock integration
 If you want to use **galvanic-mock** integration (only available on nightly) then add
