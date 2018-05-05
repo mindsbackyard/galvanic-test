@@ -131,7 +131,7 @@ galvanic-test = "*" // insert the appropriate version instead of "*"
 ```
 After specifying the dependency we include the library with enabled macros in our `main.rs`,`lib.rs`, and/or our integration tests in `tests/`.
 ```Rust
-#[use_macros] extern crate galvanic_test;
+#[macro_use] extern crate galvanic_test;
 ```
 
 ### Creating test suites for grouping tests
@@ -351,7 +351,7 @@ To assert that all parameterisation fail it's recommended to use `assert_that!(.
 ### Enabling Galvanic-mock integration
 If you want to use **galvanic-mock** integration (only available on nightly) then add
 ```Rust
-#[use_macros] extern crate galvanic_test;
+#[macro_use] extern crate galvanic_test;
 #![feature(proc_macro)]
 extern crate galvanic_mock;
 ```
