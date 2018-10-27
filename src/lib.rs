@@ -227,6 +227,7 @@ macro_rules! test_suite {
     ( name $name:ident ; $($remainder:tt)* ) => {
         #[cfg(test)]
         mod $name {
+            use super::*;
             #[allow(unused_imports)] use ::galvanic_test::TestFixture;
             __test_suite_int!(@int $($remainder)*);
         }
@@ -236,6 +237,7 @@ macro_rules! test_suite {
     ( $($remainder:tt)* ) => {
         #[cfg(test)]
         mod __galvanic_test {
+            use super::*;
             #[allow(unused_imports)] use ::galvanic_test::TestFixture;
             __test_suite_int!(@int $($remainder)*);
         }
