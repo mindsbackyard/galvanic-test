@@ -1,7 +1,8 @@
 [package]
 name = "galvanic-test"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Christopher Bacher <mindsbackyard@gmail.com>"]
+edition = "2018"
 
 description = """A testing framework for setting up and tearing up test fixtures/environments with support for parameterised test cases.
 

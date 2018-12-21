@@ -13,10 +13,8 @@
  * limitations under the License.
  */
 
-#[macro_use] extern crate galvanic_test;
-
 mod setup_only {
-    use galvanic_test::TestFixture;
+    use galvanic_test::{fixture, TestFixture};
 
     fixture!( setup_only() -> i32 {
         setup(&mut self) {
@@ -33,14 +31,15 @@ mod setup_only {
 
     #[test]
     fn should_get_single_unit_parameter() {
-        assert_eq!(setup_only::parameters().unwrap().collect::<Vec<_>>(),
-                   vec![()]
+        assert_eq!(
+            setup_only::parameters().unwrap().collect::<Vec<_>>(),
+            vec![()]
         );
     }
 }
 
 mod with_tear_down {
-    use galvanic_test::TestFixture;
+    use galvanic_test::{fixture, TestFixture};
 
     static mut TEAR_DOWN_FLAG: bool = false;
 

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#[macro_use] extern crate galvanic_test;
-use galvanic_test::TestFixture;
+// #[macro_use] extern crate galvanic_test;
+use galvanic_test::{fixture, TestFixture};
 
 fixture!( with_members(x: i32, y: i32) -> () {
     members {

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#[macro_use] extern crate galvanic_test;
-use galvanic_test::TestFixture;
+// #[macro_use] extern crate galvanic_test;
+use galvanic_test::{fixture, TestFixture};
 
 static mut TEAR_DOWN_VALUE: i32 = 0;
 
@@ -36,8 +36,7 @@ fn should_create_binding_access_parameters_and_tear_down() {
         let params = &(2, 3);
         let mut fixture = test_fixture::new(params);
         let binding = fixture.setup();
-        assert_eq!(binding.val,
-                   binding.params.x * binding.params.y);
+        assert_eq!(binding.val, binding.params.x * binding.params.y);
     }
     assert_eq!(unsafe { TEAR_DOWN_VALUE }, 1);
 }

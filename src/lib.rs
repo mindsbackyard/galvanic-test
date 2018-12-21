@@ -13,27 +13,30 @@
  * limitations under the License.
  */
 
-use std::ops::Drop;
 use std::fmt::Debug;
+use std::ops::Drop;
 
-pub trait TestFixture<'param, P, R> : Drop
-        where P: Debug + 'static {
+pub trait TestFixture<'param, P, R>: Drop
+where
+    P: Debug + 'static,
+{
     fn new(curried_params: &'param P) -> Self;
 
-    fn parameters() -> Option<Box<Iterator<Item=P>>>;
+    fn parameters() -> Option<Box<Iterator<Item = P>>>;
 
     fn setup(&mut self) -> FixtureBinding<Self, R>
-            where Self: std::marker::Sized;
+    where
+        Self: std::marker::Sized;
 
-    fn tear_down(&self) { }
+    fn tear_down(&self) {}
 }
 
-pub struct FixtureBinding<'fixture, F:'fixture, R> {
+pub struct FixtureBinding<'fixture, F: 'fixture, R> {
     pub val: R,
-    pub params: &'fixture F
+    pub params: &'fixture F,
 }
 
-impl<'fixture, F:'fixture, R> FixtureBinding<'fixture, F, R> {
+impl<'fixture, F: 'fixture, R> FixtureBinding<'fixture, F, R> {
     pub fn decompose(self) -> (R, &'fixture F) {
         (self.val, self.params)
     }
@@ -50,7 +53,7 @@ impl<'fixture, F:'fixture, R> FixtureBinding<'fixture, F, R> {
 /// Creates a new `TestFixture` implementation.
 ///
 /// A `fixture!` requires a name, parameters and a
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! fixture {
     ( @impl_drop $name:ident ) => {
         impl<'param> ::std::ops::Drop for $name<'param> {
@@ -147,8 +150,7 @@ macro_rules! fixture {
     };
 }
 
-
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! test {
     ( @parameters | $body:block $test_case_failed:ident ) => { $body };
 
@@ -159,7 +161,7 @@ macro_rules! test {
             $(
                 let params = &$params;
                 let mut $fixture_obj = $fixture::new(params);
-                described_params.push(format!("{:?}", $fixture_obj));
+                described_params.push(_galvanic__format!("{:?}", $fixture_obj));
                 let mut $fixture = $fixture_obj.setup();
                 noop(&$fixture);
             )*
@@ -167,7 +169,7 @@ macro_rules! test {
             $body
         }));
         if result.is_err() {
-            println!("The above error occured with the following parameterisation of the test case:\n    {}\n",
+            _galvanic__println!("The above error occured with the following parameterisation of the test case:\n    {}\n",
                      described_parameters);
             $test_case_failed.set(true);
         }
@@ -188,7 +190,7 @@ macro_rules! test {
                     test!(@parameters $($remainder)* (fixture_obj, params, $fixture));
                 }
             },
-            None => panic!(concat!(
+            None => _galvanic__panic!(_galvanic__concat!(
                 "If a test fixture should be injected without supplying parameters, ",
                 "it either needs to have no arguments ",
                 "or a `params` block returning an iterator of parameter tuples ",
@@ -206,7 +208,7 @@ macro_rules! test {
             let test_case_failed = ::std::cell::Cell::new(false);
             test!(@parameters $($args_and_body)* test_case_failed);
             if test_case_failed.get() {
-                panic!("Some parameterised test cases failed");
+                _galvanic__panic!("Some parameterised test cases failed");
             }
         }
     };
@@ -220,7 +222,7 @@ macro_rules! test {
     };
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[cfg(not(feature = "galvanic_mock_integration"))]
 macro_rules! test_suite {
     // named test suite
@@ -228,7 +230,7 @@ macro_rules! test_suite {
         #[cfg(test)]
         mod $name {
             #[allow(unused_imports)] use ::galvanic_test::TestFixture;
-            __test_suite_int!(@int $($remainder)*);
+            galvanic_test::__test_suite_int!(@int $($remainder)*);
         }
     };
 
@@ -237,12 +239,12 @@ macro_rules! test_suite {
         #[cfg(test)]
         mod __galvanic_test {
             #[allow(unused_imports)] use ::galvanic_test::TestFixture;
-            __test_suite_int!(@int $($remainder)*);
+            galvanic_test::__test_suite_int!(@int $($remainder)*);
         }
     };
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[cfg(feature = "galvanic_mock_integration")]
 macro_rules! test_suite {
     // named test suite
@@ -254,7 +256,7 @@ macro_rules! test_suite {
             #[use_mocks]
             mod with_mocks {
                 #[allow(unused_imports)] use ::galvanic_test::TestFixture;
-                __test_suite_int!(@int $($remainder)*);
+                galvanic_test::__test_suite_int!(@int $($remainder)*);
             }
         }
     };
@@ -268,13 +270,13 @@ macro_rules! test_suite {
             #[use_mocks]
             mod with_mocks {
                 #[allow(unused_imports)] use ::galvanic_test::TestFixture;
-                __test_suite_int!(@int $($remainder)*);
+                galvanic_test::__test_suite_int!(@int $($remainder)*);
             }
         }
     };
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! __test_suite_int {
     // internal: fixture in test_suite
     ( @int $(#[$attr:meta])* fixture $name:ident ($($param:ident : $param_ty:ty),*) -> $ret_ty:ty {
@@ -290,7 +292,7 @@ macro_rules! __test_suite_int {
               setup(& mut $self_setup) $setup_body
               $(tear_down(&$self_td) $tear_down_body)*
         });
-        __test_suite_int!(@int $($remainder)*);
+        galvanic_test::__test_suite_int!(@int $($remainder)*);
     };
 
     // internal: test in test_suite
@@ -299,7 +301,7 @@ macro_rules! __test_suite_int {
             $($remainder:tt)*
     ) => {
         test!( $(#[$attr])* $name | $($fixture $(($($expr),*))* ),* | $body);
-        __test_suite_int!(@int $($remainder)*);
+        galvanic_test::__test_suite_int!(@int $($remainder)*);
     };
 
     // internal: arbitrary item in test suite
@@ -307,9 +309,41 @@ macro_rules! __test_suite_int {
             $($remainder:tt)*
     ) => {
         $item
-        __test_suite_int!(@int $($remainder)*);
+        galvanic_test::__test_suite_int!(@int $($remainder)*);
     };
 
     // internal: empty test suite
     ( @int ) => { };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _galvanic__panic {
+    ($($inner:tt)*) => {
+        panic!($($inner)*)
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _galvanic__format {
+    ($($inner:tt)*) => {
+        format!($($inner)*)
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _galvanic__println {
+    ($($inner:tt)*) => {
+        println!($($inner)*)
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _galvanic__concat {
+    ($($inner:tt)*) => {
+        concat!($($inner)*)
+    };
 }

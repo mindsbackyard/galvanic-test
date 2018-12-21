@@ -15,8 +15,9 @@
 
 #![cfg_attr(feature = "galvanic_mock_integration", feature(proc_macro_hygiene))]
 
-#[macro_use] extern crate galvanic_test;
-#[cfg(feature = "galvanic_mock_integration")] extern crate galvanic_mock;
+#[cfg(feature = "galvanic_mock_integration")]
+extern crate galvanic_mock;
+use galvanic_test::test_suite;
 
 test_suite! {
     test simple_test_in_unnamed_test_suite() {

@@ -16,8 +16,11 @@
 #![cfg(feature = "galvanic_mock_integration")]
 
 #![feature(proc_macro_hygiene)]
-#[macro_use] extern crate galvanic_test;
-extern crate galvanic_mock;use galvanic_mock::*;
+extern crate galvanic_mock;
+use galvanic_mock::*;
+
+use galvanic_test::test_suite;
+
 
 #[mockable]
 trait TestTrait {
