@@ -17,6 +17,7 @@
 
 #[cfg(feature = "galvanic_mock_integration")]
 extern crate galvanic_mock;
+#[cfg(test)]
 use galvanic_test::test_suite;
 
 test_suite! {

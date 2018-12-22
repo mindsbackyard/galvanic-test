@@ -22,8 +22,7 @@ Everything you already know about Rust testing should still apply.
 
 Tests are organised in test suites which are either named or anonymous.
 ```Rust
-#[macro_use] extern crate galvanic_test;
-use galvanic_test::*;
+use galvanic_test::test_suite;
 
 // test suites are only built when a test is executed, e.g., with `cargo test`
 test_suite! {
@@ -38,7 +37,7 @@ test_suite! {
         assert_eq!(3*2, 6);
     }
 
-    // attributes can still be applied as for functions
+    // attributes can usually be applied as for functions, e.g., #[should_panic(expected = "...")] is curently not supported
     #[should_panic]
     test another_test() {
         assert_eq!(calc(3,2), 7);
@@ -51,7 +50,7 @@ A test fixture is a piece of code which setups *one* specific part of a test and
 If you know [pytest](https://docs.pytest.org/en/latest/) you should feel at home.
 If you have experience with XUnit-style frameworks, e.g., JUnit, CPPUnit, ...; then you can think about fixtures as different `before`/`after` blocks which belong together.
 ```Rust
-#[macro_use] extern crate galvanic_test;
+use galvanic_test::test_suite;
 
 test_suite! {
     use std::fs::{File, remove_file};
@@ -125,14 +124,29 @@ test_suite! {
 It is recommended that you add `galvanic-test` as a dev-dependency in your `Cargo.toml`.
 Make sure to use an appropriate version specification.
 The crate follows semantic versioning.
+
+For Rust edition 2018 use a version number of at least `0.2`
 ```toml
 [dev-dependencies]
-galvanic-test = "*" // insert the appropriate version instead of "*"
+galvanic-test = "0.2"
+```
+After specifying the dependency we can import the `test_suite` macro as follows.
+```Rust
+use galvanic_test::test_suite;
+```
+When using `galvanic-test` as a dev-dependency make sure that the `use` statement is only reachable when your crate is compiled when tests are enabled, e.g., wrap it in a `#[cfg(test)]` annotated module.
+
+### Rust version before edition 2018
+For using the crate with a Rust version before edition 2018 use a version number up to  `0.1.5`
+```toml
+[dev-dependencies]
+galvanic-test = "0.1.5"
 ```
 After specifying the dependency we include the library with enabled macros in our `main.rs`,`lib.rs`, and/or our integration tests in `tests/`.
 ```Rust
-#[macro_use] extern crate galvanic_test;
+#[cfg(test) #[macro_use] extern crate galvanic_test;
 ```
+When using `galvanic-test` as a dev-dependency make sure that any macro of `galvanic-test` is only reachable when tests are enabled.
 
 ### Creating test suites for grouping tests
 
@@ -348,6 +362,8 @@ Be careful when applying `#[should_panic]` to a parameterised test case.
 In that case the test will succeed if **any** parameterisation fails.
 To assert that all parameterisation fail it's recommended to use `assert_that!(..., panics)` from the `galvanic-assert` crate to treat panicking like a regular behaviour.
 
+Further `#[should_panic(expected = "message")]` currently is not supported for tests with fixtures as the test output is modified to include information about the failing fixture parameterision.
+
 ### Enabling Galvanic-mock integration
 If you want to use **galvanic-mock** integration (only available on nightly) then add
 ```Rust
@@ -359,7 +375,7 @@ and enable the `galvanic_mock_integration` feature in your `Cargo.toml`
 ```toml
 [dev-dependencies]
 galvanic-test = { version = "*", features = ["galvanic_mock_integration"] }
-galvanic-mock = "*" // replace with the correct version
+galvanic-mock = "*" # replace with the correct version
 ```
 
 Afterwards each test suite will automatically apply the `#[use_mocks]` attribute so you can use fixtures to return actual mock objects.
